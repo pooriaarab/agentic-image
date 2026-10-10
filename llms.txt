@@ -1,0 +1,15 @@
+# agentic-image
+
+Route image prompts across Flux, Ideogram, Replicate, and Workers AI.
+
+Keywords: image-generation, flux, agentic-suite, claude-code, codex, cli, mcp.
+
+- SDK: import { generateImage, listVendors } from "agentic-image".
+- CLI: agentic-image generate --prompt "...".
+- MCP: run agentic-image mcp, then call generate_image.
+
+## Docs
+
+- README: https://github.com/pooriaarab/agentic-image
+- Core contract: https://github.com/pooriaarab/agentic-image/blob/main/docs/agentic-core.md
+- License: MIT
