@@ -1,96 +1,81 @@
-# Agentic image
+# agentic-image
 
-Route image prompts across Flux, Ideogram, Replicate, and Workers AI.
+[![npm version](https://img.shields.io/npm/v/agentic-image)](https://www.npmjs.com/package/agentic-image) [![Downloads/month](https://img.shields.io/npm/dm/agentic-image)](https://www.npmjs.com/package/agentic-image) [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](https://opensource.org/license/mit)
 
-One prompt goes in. One vendor makes the still. You pick the vendor, or you preview first.
+[Package and API types](https://www.npmjs.com/package/agentic-image)
 
-Dry run is the default. The pack calls no vendor and spends nothing until you pass `--live`.
+agentic-image is an open-source image generation wrapper for developers using Flux, Ideogram, Replicate, and Cloudflare Workers AI.
 
-## Quick start
-
-```sh
-npm install -g agentic-image
-agentic-image vendors
-agentic-image generate --prompt "a red tractor at dawn"
-```
-
-The first command lists vendors and key status. The second previews the route. It returns JSON and makes no image.
-
-Go live with one flag:
+## Install
 
 ```sh
-export BFL_API_KEY="your key here"
-agentic-image generate --prompt "a red tractor at dawn" --live
+npm install agentic-image
 ```
 
-Call the library:
+Requires Node.js 18 or later. Includes TypeScript types and three direct runtime dependencies.
+
+## Generate your first image preview
+
+```sh
+npx agentic-image generate --prompt "a red tractor at dawn"
+```
+
+Success prints JSON with `dryRun: true`, `vendor: "flux"`, and image resolution metadata. The preview creates no image.
+
+For live generation, export your provider key in the shell. The package does not load `.env` files.
+
+```sh
+export BFL_API_KEY="your-key"
+npx agentic-image generate --prompt "a red tractor at dawn" --live
+```
+
+Success prints `dryRun: false` and an image URL in `images`. Open that URL to view the image.
 
 ```js
-import { generateImage } from "agentic-image";
-
-await generateImage("a red tractor at dawn"); // preview, dry run
-await generateImage("a red tractor at dawn", { dryRun: false }); // real call
+import { generateImage, getCostReport } from "agentic-image";
+console.log(await generateImage("a red tractor at dawn")); // Preview first.
+console.log(getCostReport()); // Session accounting; not a provider invoice.
 ```
 
-Start the MCP server:
+## How it works
 
-```sh
-agentic-image mcp
+```text
+SDK / CLI / MCP -> generateImage -> dry-run preview OR one provider adapter
 ```
 
-## Three usecases
+## Provider coverage
 
-1. You preview a prompt from the terminal before you spend.
-2. You make a still with one vendor in a script.
-3. You let an agent call `generate_image` as an MCP tool.
+| Provider | Adapter | Environment variables |
+| --- | --- | --- |
+| Black Forest Labs Flux | Implemented HTTP + polling | `BFL_API_KEY` |
+| Ideogram | Implemented HTTP | `IDEOGRAM_API_KEY` |
+| Replicate | Implemented HTTP + polling | `REPLICATE_API_TOKEN` |
+| Cloudflare Workers AI | Implemented HTTP | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` |
 
-## Keys
+All four adapters have request implementations. Live credential verification is pending in this README review; key presence is not verification.
 
-| Vendor | Key |
-| --- | --- |
-| flux | BFL_API_KEY |
-| ideogram | IDEOGRAM_API_KEY |
-| replicate | REPLICATE_API_TOKEN |
-| workers-ai | CLOUDFLARE_API_TOKEN plus CLOUDFLARE_ACCOUNT_ID |
+## Features and runtime surfaces
 
-`agentic-image vendors` reports which keys exist. It never prints a value.
+- Select one provider with `--vendor flux`, `ideogram`, `replicate`, or `workers-ai`.
+- Preview by default; use `--live` or SDK option `dryRun: false` for provider requests.
+- CLI commands: `generate`, `vendors`, `costs`, `mcp`; flags: `--help` and `--version`.
+- Model Context Protocol (MCP): start `npx agentic-image mcp` for `generate_image`, `list_vendors`, and `get_cost_report`.
+- The repository includes a self-hosted Worker entry with `GET /health` and `POST /generate`; it is not an npm export.
 
-## Commands
+## Behavior limits and status
 
-- `generate` makes stills from a prompt. It previews by default. Pass `--live` to send.
-- `vendors` lists vendors, models, and key status.
-- `costs` prints the cost report as JSON.
-- `mcp` starts the MCP server on stdio.
+Flux and Replicate default to 60 polling iterations. HTTP failures raise errors; no automatic provider fallback exists.
+Replicate and Workers AI ignore width and height. Ideogram requires both dimensions together.
+Cost accounting is process-local. Separate CLI invocations do not share session totals.
+This package provides no managed image service, file storage, or automatic image download.
+Version 0.1.0 APIs can change. Use the repository issue tracker for support; access may require repository permissions.
 
-## Gates
+## Contributing and releases
 
-Run all three before you push:
-
-```sh
-npm run build && npm run typecheck && npm test
-```
-
-Then run the real installed CLI once from a tarball:
-
-```sh
-npm pack
-npx --yes --package ./agentic-image-0.1.0.tgz agentic-image generate --prompt "hello"
-```
-
-## Release flow
-
-Push to `main` for review. Merge to `release` to publish. The publish workflow ships only when the version is new.
-
-## Layout
-
-- `src/index.ts`: the library face.
-- `src/cli.ts`: the terminal face.
-- `src/mcp.ts`: the MCP server. `src/mcp-bin.ts` starts it.
-- `src/worker.ts`: the edge worker face.
-- `src/images.ts`: the vendor adapters and the generate entry.
-- `agentic-core.d.ts`: the frozen contract.
-- `docs/agentic-core.md`: the contract in plain words.
+Run `npm run build && npm run typecheck && npm test` before pushing.
+Then run `npm pack` and preview through the generated tarball's installed CLI.
+The `release` branch publishes only when the package version is new.
 
 ## License
 
-MIT. See `LICENSE`.
+MIT.
